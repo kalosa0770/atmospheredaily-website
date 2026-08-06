@@ -13,6 +13,7 @@ export default function UnderConstruction () {
                 <Construction className="w-20 h-20" />
             </motion.div>
             <h1 className="text-4xl font-extrabold mb-2">Site Under Construction</h1>
+            <p className="text-lg text-gray-600">We are currently working on building this page. Please check back later for updates.</p>
         </main>
     )
 }
