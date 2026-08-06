@@ -23,7 +23,7 @@ export default function Navbar() {
   }
 
   return (
-    <header className="w-full max-w-6xl flex flex-col overflow-hidden min-h-screen">
+    <header className="w-full max-w-6xl flex flex-col overflow-hidden">
         <div className={`fixed top-0 left-0 right-0 w-full flex items-center md:justify-center justify-between md:mx-auto font-heading md:py-8 py-1 px-3 z-50 ${isOpen ? "bg-background shadow-md" : "bg-transparent"} transition duration-100`}>
             <div className="flex pr-6">
                 <Image src='/logo.png' width={110} height={110} alt="Logo" className="md:w-24 md:h-24 w-22 h-22 object-contain" />
