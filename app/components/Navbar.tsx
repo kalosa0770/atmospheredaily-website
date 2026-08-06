@@ -31,7 +31,7 @@ export default function Navbar() {
             <section className="hidden md:flex px-3 items-center justify-center">
                 {navLinks.map((links => (
                     <nav className="px-6 text-text" key={links.id}>
-                        <Link href={links.href} className="uppercase text-[12px] hover:underline transition:underline duration-60">{links.name}</Link>
+                        <Link href={links.href} className="uppercase tracking-wider text-[12px] hover:underline transition:underline duration-60">{links.name}</Link>
                     </nav>
                 )))}
             </section>
@@ -47,7 +47,7 @@ export default function Navbar() {
             <div className="hidden md:inline-flex">
             <Link href='/login' className="flex gap-2 bg-button-background rounded-full items-center text-white hover:button-hover px-4 py-2">
                     <User className="w-6 h-6"/>
-                    <span className="">Login</span>
+                    <span className=" uppercase text-[12px] tracking-wider">Login</span>
                 </Link>
             </div>
         </div>
