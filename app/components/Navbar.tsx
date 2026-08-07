@@ -113,7 +113,7 @@ export default function Navbar() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 w-full h-screen bg-text flex flex-col pt-42 px-6 overflow-y-auto z-40"
+            className="fixed inset-0 w-full h-screen bg-background flex flex-col items-left justify-center pt-28 pb-12 px-6 overflow-y-auto z-40"
           >
             <nav className="flex flex-col gap-6">
               {navLinks.map((link) => (
@@ -121,11 +121,12 @@ export default function Navbar() {
                   <Link
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className="uppercase text-white text-sm font-medium tracking-wider hover:text-slate-300 transition-colors"
+                    className="uppercase text-text pb-6 text-sm font-medium tracking-wider hover:text-background-hover transition-colors"
                   >
                     {link.name}
+                    <div className="border-t border-text w-full mt-3" />
                   </Link>
-                  <div className="border-t border-slate-800 w-full" />
+                  
                 </div>
               ))}
             </nav>
