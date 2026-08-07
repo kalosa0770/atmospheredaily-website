@@ -113,7 +113,7 @@ export default function Navbar() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="fixed inset-0 w-full h-screen bg-slate-950 flex flex-col pt-28 px-6 pb-12 overflow-y-auto z-40"
+            className="fixed inset-0 w-full h-screen bg-text flex flex-col pt-42 px-6 overflow-y-auto z-40"
           >
             <nav className="flex flex-col gap-6">
               {navLinks.map((link) => (
