@@ -78,7 +78,7 @@ export default function Navbar() {
         <div className="hidden md:inline-flex ml-4">
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-slate-900 rounded-full text-white hover:bg-slate-800 px-5 py-2.5 transition-all"
+            className="flex items-center gap-2 bg-section-background rounded-full text-white hover:bg-section-hover px-5 py-2.5 transition-all"
           >
             <User className="w-4 h-4" />
             <span className="uppercase text-[12px] tracking-wider font-semibold">
@@ -91,7 +91,7 @@ export default function Navbar() {
         <section className="md:hidden flex items-center gap-4 z-50">
           <Link
             href="/login"
-            className="flex items-center justify-center bg-slate-900 rounded-full text-white p-2"
+            className="flex items-center justify-center bg-section-background rounded-full text-white p-2"
           >
             <User className="w-5 h-5" />
           </Link>
