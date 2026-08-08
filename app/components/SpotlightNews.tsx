@@ -88,7 +88,11 @@ export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
 
         <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">Daily News</h1>
       {/* Default Juicer Feed Container */}
-      <ul className="juicer-feed" data-feed-id={feedId}></ul>
+      <ul 
+        className="juicer-feed jcr-feed" 
+        data-feed-id={feedId}
+        data-overlay="true"
+      ></ul>
 
       {/* Juicer JS Script */}
      
