@@ -6,14 +6,40 @@ import Script from 'next/script';
 
 interface SpotlightNewsFeedProps {
   feedId: string;
+  filterHashtag?: string;
+  title?: string;
 }
 
-export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
+export default function SpotlightNewsFeed({
+  feedId,
+  filterHashtag,
+  title = "Daily News",
+}: SpotlightNewsFeedProps) {
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Juicer) {
       (window as any).Juicer.initialize();
     }
-  }, [feedId]);
+
+    if (!filterHashtag) return;
+
+    // Filter posts based on hashtag text present in the card
+    const filterPosts = () => {
+      const items = document.querySelectorAll('.juicer-feed > li.juicer-item');
+      items.forEach((item) => {
+        const text = item.textContent || '';
+        const matches = text.toLowerCase().includes(filterHashtag.toLowerCase());
+        (item as HTMLElement).style.display = matches ? 'flex' : 'none';
+      });
+    };
+
+    // Observe Juicer feed container for DOM updates as posts load asynchronously
+    const feedContainer = document.querySelector('.juicer-feed');
+    if (feedContainer) {
+      const observer = new MutationObserver(filterPosts);
+      observer.observe(feedContainer, { childList: true, subtree: true });
+      return () => observer.disconnect();
+    }
+  }, [feedId, filterHashtag]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -24,95 +50,22 @@ export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
         type="text/css"
       />
 
-      {/* Custom Slider & Modal CSS */}
-      <style jsx global>{`
-        /* Convert feed container into a horizontal scroll container */
-        ul.juicer-feed {
-          display: flex !important;
-          flex-direction: row !important;
-          flex-wrap: nowrap !important;
-          overflow-x: auto !important;
-          overflow-y: hidden !important;
-          scroll-snap-type: x mandatory !important;
-          scroll-behavior: smooth !important;
-          gap: 1.25rem !important;
-          padding: 1rem 0 !important;
-          margin: 0 !important;
-          list-style: none !important;
-          width: 100% !important;
+      {title && (
+        <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">
+          {title}
+        </h1>
+      )}
 
-          /* Hide scrollbar for Webkit */
-          -webkit-overflow-scrolling: touch;
-        }
-
-        /* Hide scrollbars across browsers */
-        ul.juicer-feed::-webkit-scrollbar {
-          display: none;
-        }
-
-        ul.juicer-feed {
-          -ms-overflow-style: none; /* IE and Edge */
-          scrollbar-width: none; /* Firefox */
-        }
-
-        /* Set individual slide item dimensions and snap points */
-        ul.juicer-feed > li.juicer-item {
-          flex: 0 0 85% !important; /* Mobile: 85% width so next slide peek is visible */
-          max-width: 85% !important;
-          scroll-snap-align: start !important;
-          float: none !important;
-          margin: 0 !important;
-          background-color: #ffffff !important;
-          border: 1px solid #e2e8f0 !important;
-          border-radius: 0.75rem !important;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-          box-sizing: border-box !important;
-        }
-
-        /* Tablet slide width */
-        @media (min-width: 640px) {
-          ul.juicer-feed > li.juicer-item {
-            flex: 0 0 45% !important;
-            max-width: 45% !important;
-          }
-        }
-
-        /* Desktop slide width (Shows ~3 slides in view) */
-        @media (min-width: 1024px) {
-          ul.juicer-feed > li.juicer-item {
-            flex: 0 0 31% !important;
-            max-width: 31% !important;
-          }
-        }
-
-        /* JUICER LIGHTBOX OVERLAY Z-INDEX FIX */
-        .juicer-overlay {
-          z-index: 99999 !important; /* Ensures modal sits above fixed headers */
-          background-color: rgba(15, 23, 42, 0.85) !important;
-          backdrop-filter: blur(4px) !important;
-        }
-
-        .juicer-overlay .j-overlay-content {
-          z-index: 100000 !important;
-          position: relative !important;
-          border-top: 4px solid #1a3a3f !important;
-        }
-      `}</style>
-
-      <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">
-        Daily News
-      </h1>
-
-      {/* Default Juicer Feed Container */}
+      {/* Juicer Target Container */}
       <ul
         className="juicer-feed jcr-feed"
         data-feed-id={feedId}
         data-overlay="true"
       ></ul>
 
-      {/* Juicer JS Global Script */}
+      {/* Juicer Global Script */}
       <Script
-        src="https://assets.juicer.io/embed.js"
+        src="https://www.juicer.io/embed/atmosphere-daily/embed-code.js"
         strategy="lazyOnload"
         onLoad={() => {
           if (typeof window !== 'undefined' && (window as any).Juicer) {
