@@ -24,7 +24,7 @@ export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
         type="text/css"
       />
 
-      {/* Custom Slider CSS */}
+      {/* Custom Slider & Modal CSS */}
       <style jsx global>{`
         /* Convert feed container into a horizontal scroll container */
         ul.juicer-feed {
@@ -41,18 +41,18 @@ export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
           list-style: none !important;
           width: 100% !important;
 
-          /* Hide scrollbar for Chrome, Safari, and Opera */
+          /* Hide scrollbar for Webkit */
           -webkit-overflow-scrolling: touch;
         }
 
+        /* Hide scrollbars across browsers */
         ul.juicer-feed::-webkit-scrollbar {
           display: none;
         }
 
-        /* Hide scrollbar for IE, Edge, and Firefox */
         ul.juicer-feed {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
+          -ms-overflow-style: none; /* IE and Edge */
+          scrollbar-width: none; /* Firefox */
         }
 
         /* Set individual slide item dimensions and snap points */
@@ -84,20 +84,35 @@ export default function SpotlightNewsFeed({ feedId }: SpotlightNewsFeedProps) {
             max-width: 31% !important;
           }
         }
+
+        /* JUICER LIGHTBOX OVERLAY Z-INDEX FIX */
+        .juicer-overlay {
+          z-index: 99999 !important; /* Ensures modal sits above fixed headers */
+          background-color: rgba(15, 23, 42, 0.85) !important;
+          backdrop-filter: blur(4px) !important;
+        }
+
+        .juicer-overlay .j-overlay-content {
+          z-index: 100000 !important;
+          position: relative !important;
+          border-top: 4px solid #1a3a3f !important;
+        }
       `}</style>
 
-        <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">Daily News</h1>
+      <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">
+        Daily News
+      </h1>
+
       {/* Default Juicer Feed Container */}
-      <ul 
-        className="juicer-feed jcr-feed" 
+      <ul
+        className="juicer-feed jcr-feed"
         data-feed-id={feedId}
         data-overlay="true"
       ></ul>
 
-      {/* Juicer JS Script */}
-     
+      {/* Juicer JS Global Script */}
       <Script
-        src="https://www.juicer.io/embed/atmosphere-daily/embed-code.js"
+        src="https://assets.juicer.io/embed.js"
         strategy="lazyOnload"
         onLoad={() => {
           if (typeof window !== 'undefined' && (window as any).Juicer) {
