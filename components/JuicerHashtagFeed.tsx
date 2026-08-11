@@ -59,49 +59,92 @@ export default function JuicerHashtagFeed({
     return () => observer.disconnect();
   }, [containerId, normalizedTag]);
 
-  const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
-    e.stopPropagation();
+ const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
+  e.stopPropagation();
 
-    const postElement = (e.target as HTMLElement).closest<HTMLElement>(
-      '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
+  const targetEl = e.target as HTMLElement;
+
+  // 1. Check if the clicked element itself or a parent is a direct <a> tag
+  const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
+  if (
+    directAnchor &&
+    directAnchor.href &&
+    !directAnchor.href.endsWith('#') &&
+    !directAnchor.href.startsWith('javascript:')
+  ) {
+    window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  // 2. Identify the post card container or list item
+  const postElement = targetEl.closest<HTMLElement>(
+    '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
+  );
+
+  if (!postElement) return;
+
+  // 3. Check if the post container itself is an anchor tag
+  if (
+    postElement instanceof HTMLAnchorElement &&
+    postElement.href &&
+    !postElement.href.endsWith('#')
+  ) {
+    window.open(postElement.href, '_blank', 'noopener,noreferrer');
+    return;
+  }
+
+  // 4. Gather ALL <a> tags on or inside the post card
+  const anchors = Array.from(
+    postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
+  );
+  if (postElement instanceof HTMLAnchorElement) {
+    anchors.unshift(postElement);
+  }
+
+  // Find social network URLs (Facebook, Instagram, X/Twitter, LinkedIn)
+  const socialLink = anchors.find((a) => {
+    const href = a.href || '';
+    return (
+      href.includes('facebook.com') ||
+      href.includes('fb.watch') ||
+      href.includes('instagram.com') ||
+      href.includes('twitter.com') ||
+      href.includes('x.com') ||
+      href.includes('linkedin.com')
     );
+  });
 
-    if (!postElement) return;
+  if (socialLink && socialLink.href) {
+    window.open(socialLink.href, '_blank', 'noopener,noreferrer');
+    return;
+  }
 
-    const links = Array.from(postElement.querySelectorAll<HTMLAnchorElement>('a[href]'));
-    const socialLink = links.find((a) => {
-      const href = a.href;
-      return (
-        href.includes('facebook.com') ||
-        href.includes('fb.watch') ||
-        href.includes('instagram.com') ||
-        href.includes('twitter.com') ||
-        href.includes('x.com') ||
-        href.includes('linkedin.com')
-      );
-    });
+  // 5. Extract Juicer data attributes (where Juicer often stores the real post URL)
+  const dataUrl =
+    postElement.getAttribute('data-url') ||
+    postElement.getAttribute('data-permalink') ||
+    postElement.getAttribute('data-external-url') ||
+    postElement.getAttribute('data-link') ||
+    postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
+    postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
 
-    if (socialLink) {
-      window.open(socialLink.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
+  if (dataUrl && dataUrl.startsWith('http')) {
+    window.open(dataUrl, '_blank', 'noopener,noreferrer');
+    return;
+  }
 
-    const externalUrl =
-      postElement.getAttribute('data-url') ||
-      postElement.getAttribute('data-external-url');
+  // 6. Fallback: Use any non-relative valid HTTP link found inside the card
+  const fallbackLink = anchors.find(
+    (a) =>
+      a.href &&
+      a.href.startsWith('http') &&
+      !a.href.includes(window.location.hostname)
+  );
 
-    if (externalUrl && externalUrl.startsWith('http')) {
-      window.open(externalUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    const fallback = postElement.querySelector<HTMLAnchorElement>(
-      'a.jcr-post-timestamp, a.j-timestamp, a.jcr-post-source-icon, a.j-source-icon'
-    );
-    if (fallback && fallback.href && !fallback.href.includes('#')) {
-      window.open(fallback.href, '_blank', 'noopener,noreferrer');
-    }
-  };
+  if (fallbackLink) {
+    window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
+  }
+};
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 overflow-x-hidden">

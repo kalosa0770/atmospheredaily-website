@@ -98,7 +98,7 @@ export default function Navbar() {
           <button
             onClick={toggleMenu}
             aria-label="Toggle Navigation"
-            className="p-1 text-slate-900 focus:outline-none"
+            className="p-1 text-slate-900 focus:outline-none border-1 border-text/10 rounded-full"
           >
             {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
