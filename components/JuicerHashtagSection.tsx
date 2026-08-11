@@ -1,3 +1,4 @@
+// components/JuicerHashtagSection.tsx
 'use client';
 
 import { useJuicerFeedTarget } from './JuicerFeedProvider';
@@ -6,14 +7,12 @@ interface JuicerHashtagSectionProps {
   tag: string;
   title?: string;
   variant?: 'grid' | 'bento' | 'list';
-  delayMs?: number; // Added to fix error TS2322
 }
 
 export default function JuicerHashtagSection({
   tag,
   title,
   variant = 'grid',
-  delayMs = 5000,
 }: JuicerHashtagSectionProps) {
   const targetRef = useJuicerFeedTarget<HTMLUListElement>(tag);
 
@@ -28,7 +27,6 @@ export default function JuicerHashtagSection({
 
     const targetEl = e.target as HTMLElement;
 
-    // 1. Check if the clicked element itself or a parent is a direct <a> tag
     const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
     if (
       directAnchor &&
@@ -40,14 +38,12 @@ export default function JuicerHashtagSection({
       return;
     }
 
-    // 2. Identify the post card container or list item
     const postElement = targetEl.closest<HTMLElement>(
       '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
     );
 
     if (!postElement) return;
 
-    // 3. Check if the post container itself is an anchor tag
     if (
       postElement instanceof HTMLAnchorElement &&
       postElement.href &&
@@ -57,7 +53,6 @@ export default function JuicerHashtagSection({
       return;
     }
 
-    // 4. Gather ALL <a> tags on or inside the post card
     const anchors = Array.from(
       postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
     );
@@ -65,7 +60,6 @@ export default function JuicerHashtagSection({
       anchors.unshift(postElement);
     }
 
-    // Find social network URLs (Facebook, Instagram, X/Twitter, LinkedIn)
     const socialLink = anchors.find((a) => {
       const href = a.href || '';
       return (
@@ -83,7 +77,6 @@ export default function JuicerHashtagSection({
       return;
     }
 
-    // 5. Extract Juicer data attributes (where Juicer often stores the real post URL)
     const dataUrl =
       postElement.getAttribute('data-url') ||
       postElement.getAttribute('data-permalink') ||
@@ -97,7 +90,6 @@ export default function JuicerHashtagSection({
       return;
     }
 
-    // 6. Fallback: Use any non-relative valid HTTP link found inside the card
     const fallbackLink = anchors.find(
       (a) =>
         a.href &&
@@ -118,7 +110,6 @@ export default function JuicerHashtagSection({
         </h1>
       )}
 
-      {/* Target element with Tailwind styling for injected Juicer sub-elements */}
       <ul
         ref={targetRef}
         onClickCapture={handleFeedClick}
