@@ -117,30 +117,29 @@ export function hideEmptyState(
 }
 
 /**
- * Executes a full filter pass on a container:
+ * Executes a full filter pass on a container and returns item counts:
  * Shows loader -> Filters items -> Displays empty state if no matches remain.
  */
 export function filterPostsInContainer(
   container: HTMLElement,
   targetTag: string
-): void {
+): { totalItems: number; visibleCount: number } {
   const normalizedTag = targetTag.toLowerCase();
   const items = container.querySelectorAll('.jcr-post, .juicer-item, li');
 
-  // 1. Show loader if Juicer hasn't injected items yet
+  // 1. Return 0 total items if Juicer hasn't injected elements yet
   if (items.length === 0) {
     showContainerLoader(container);
     hideEmptyState(container);
-    return;
+    return { totalItems: 0, visibleCount: 0 };
   }
 
-  // 2. Hide loader once posts exist in DOM
+  // 2. Hide loader once elements are found
   hideContainerLoader(container);
 
   let visibleCount = 0;
 
   items.forEach((item) => {
-    // Ignore internal loader or empty state helper elements
     if (item.id === 'hashtag-filter-loader' || item.id === 'hashtag-empty-state') {
       return;
     }
@@ -160,10 +159,12 @@ export function filterPostsInContainer(
     }
   });
 
-  // 3. Show empty notice if no posts matched the target tag
+  // 3. Display fallback state if no matches were found
   if (visibleCount === 0) {
     showEmptyState(container, targetTag);
   } else {
     hideEmptyState(container);
   }
+
+  return { totalItems: items.length, visibleCount };
 }
