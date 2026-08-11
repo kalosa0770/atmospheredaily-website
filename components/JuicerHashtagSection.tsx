@@ -6,12 +6,14 @@ interface JuicerHashtagSectionProps {
   tag: string;
   title?: string;
   variant?: 'grid' | 'bento' | 'list';
+  delayMs?: number; // Added to fix error TS2322
 }
 
 export default function JuicerHashtagSection({
   tag,
   title,
   variant = 'grid',
+  delayMs = 5000,
 }: JuicerHashtagSectionProps) {
   const targetRef = useJuicerFeedTarget<HTMLUListElement>(tag);
 
@@ -21,92 +23,92 @@ export default function JuicerHashtagSection({
     list: 'flex flex-col space-y-6',
   }[variant];
 
- const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
-  e.stopPropagation();
+  const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
+    e.stopPropagation();
 
-  const targetEl = e.target as HTMLElement;
+    const targetEl = e.target as HTMLElement;
 
-  // 1. Check if the clicked element itself or a parent is a direct <a> tag
-  const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
-  if (
-    directAnchor &&
-    directAnchor.href &&
-    !directAnchor.href.endsWith('#') &&
-    !directAnchor.href.startsWith('javascript:')
-  ) {
-    window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    // 1. Check if the clicked element itself or a parent is a direct <a> tag
+    const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
+    if (
+      directAnchor &&
+      directAnchor.href &&
+      !directAnchor.href.endsWith('#') &&
+      !directAnchor.href.startsWith('javascript:')
+    ) {
+      window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
-  // 2. Identify the post card container or list item
-  const postElement = targetEl.closest<HTMLElement>(
-    '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
-  );
-
-  if (!postElement) return;
-
-  // 3. Check if the post container itself is an anchor tag
-  if (
-    postElement instanceof HTMLAnchorElement &&
-    postElement.href &&
-    !postElement.href.endsWith('#')
-  ) {
-    window.open(postElement.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
-
-  // 4. Gather ALL <a> tags on or inside the post card
-  const anchors = Array.from(
-    postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
-  );
-  if (postElement instanceof HTMLAnchorElement) {
-    anchors.unshift(postElement);
-  }
-
-  // Find social network URLs (Facebook, Instagram, X/Twitter, LinkedIn)
-  const socialLink = anchors.find((a) => {
-    const href = a.href || '';
-    return (
-      href.includes('facebook.com') ||
-      href.includes('fb.watch') ||
-      href.includes('instagram.com') ||
-      href.includes('twitter.com') ||
-      href.includes('x.com') ||
-      href.includes('linkedin.com')
+    // 2. Identify the post card container or list item
+    const postElement = targetEl.closest<HTMLElement>(
+      '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
     );
-  });
 
-  if (socialLink && socialLink.href) {
-    window.open(socialLink.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    if (!postElement) return;
 
-  // 5. Extract Juicer data attributes (where Juicer often stores the real post URL)
-  const dataUrl =
-    postElement.getAttribute('data-url') ||
-    postElement.getAttribute('data-permalink') ||
-    postElement.getAttribute('data-external-url') ||
-    postElement.getAttribute('data-link') ||
-    postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
-    postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
+    // 3. Check if the post container itself is an anchor tag
+    if (
+      postElement instanceof HTMLAnchorElement &&
+      postElement.href &&
+      !postElement.href.endsWith('#')
+    ) {
+      window.open(postElement.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
-  if (dataUrl && dataUrl.startsWith('http')) {
-    window.open(dataUrl, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    // 4. Gather ALL <a> tags on or inside the post card
+    const anchors = Array.from(
+      postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
+    );
+    if (postElement instanceof HTMLAnchorElement) {
+      anchors.unshift(postElement);
+    }
 
-  // 6. Fallback: Use any non-relative valid HTTP link found inside the card
-  const fallbackLink = anchors.find(
-    (a) =>
-      a.href &&
-      a.href.startsWith('http') &&
-      !a.href.includes(window.location.hostname)
-  );
+    // Find social network URLs (Facebook, Instagram, X/Twitter, LinkedIn)
+    const socialLink = anchors.find((a) => {
+      const href = a.href || '';
+      return (
+        href.includes('facebook.com') ||
+        href.includes('fb.watch') ||
+        href.includes('instagram.com') ||
+        href.includes('twitter.com') ||
+        href.includes('x.com') ||
+        href.includes('linkedin.com')
+      );
+    });
 
-  if (fallbackLink) {
-    window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
-  }
-};
+    if (socialLink && socialLink.href) {
+      window.open(socialLink.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 5. Extract Juicer data attributes (where Juicer often stores the real post URL)
+    const dataUrl =
+      postElement.getAttribute('data-url') ||
+      postElement.getAttribute('data-permalink') ||
+      postElement.getAttribute('data-external-url') ||
+      postElement.getAttribute('data-link') ||
+      postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
+      postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
+
+    if (dataUrl && dataUrl.startsWith('http')) {
+      window.open(dataUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 6. Fallback: Use any non-relative valid HTTP link found inside the card
+    const fallbackLink = anchors.find(
+      (a) =>
+        a.href &&
+        a.href.startsWith('http') &&
+        !a.href.includes(window.location.hostname)
+    );
+
+    if (fallbackLink) {
+      window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 overflow-x-hidden font-body">
