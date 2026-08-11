@@ -1,15 +1,21 @@
 // components/JuicerHashtagFeed.tsx
 'use client';
 
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import Script from 'next/script';
-import { filterPostsInContainer } from '@/lib/hashtagFilter';
+import { X } from 'lucide-react';
+import { filterPostsInContainer, getPostFullText } from '@/lib/hashtagFilter';
 
 interface JuicerHashtagFeedProps {
   feedId: string;
-  /** Hashtag filter string, e.g. "#news" or "#blog" */
   tag: string;
   title?: string;
+}
+
+interface PostModalData {
+  text: string;
+  image?: string;
+  date?: string;
 }
 
 export default function JuicerHashtagFeed({
@@ -18,6 +24,7 @@ export default function JuicerHashtagFeed({
   title,
 }: JuicerHashtagFeedProps) {
   const containerId = useId().replace(/[:]/g, '');
+  const [selectedPost, setSelectedPost] = useState<PostModalData | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Juicer) {
@@ -37,21 +44,13 @@ export default function JuicerHashtagFeed({
     return () => observer.disconnect();
   }, [containerId, tag]);
 
+  // Intercept click and open internal modal instead of external social link
   const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
+    e.preventDefault();
     e.stopPropagation();
+    e.nativeEvent.stopImmediatePropagation();
 
     const targetEl = e.target as HTMLElement;
-
-    const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
-    if (
-      directAnchor &&
-      directAnchor.href &&
-      !directAnchor.href.endsWith('#') &&
-      !directAnchor.href.startsWith('javascript:')
-    ) {
-      window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
 
     const postElement = targetEl.closest<HTMLElement>(
       '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
@@ -59,62 +58,24 @@ export default function JuicerHashtagFeed({
 
     if (!postElement) return;
 
-    if (
-      postElement instanceof HTMLAnchorElement &&
-      postElement.href &&
-      !postElement.href.endsWith('#')
-    ) {
-      window.open(postElement.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
+    // Extract caption message
+    const fullText = getPostFullText(postElement);
 
-    const anchors = Array.from(
-      postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
+    // Extract post image
+    const imgElement = postElement.querySelector<HTMLImageElement>('img');
+    const imageSrc = imgElement?.src || '';
+
+    // Extract timestamp
+    const timeElement = postElement.querySelector(
+      '.jcr-post-timestamp, .j-timestamp'
     );
-    if (postElement instanceof HTMLAnchorElement) {
-      anchors.unshift(postElement);
-    }
+    const timeText = timeElement?.textContent || '';
 
-    const socialLink = anchors.find((a) => {
-      const href = a.href || '';
-      return (
-        href.includes('facebook.com') ||
-        href.includes('fb.watch') ||
-        href.includes('instagram.com') ||
-        href.includes('twitter.com') ||
-        href.includes('x.com') ||
-        href.includes('linkedin.com')
-      );
+    setSelectedPost({
+      text: fullText,
+      image: imageSrc,
+      date: timeText,
     });
-
-    if (socialLink && socialLink.href) {
-      window.open(socialLink.href, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    const dataUrl =
-      postElement.getAttribute('data-url') ||
-      postElement.getAttribute('data-permalink') ||
-      postElement.getAttribute('data-external-url') ||
-      postElement.getAttribute('data-link') ||
-      postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
-      postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
-
-    if (dataUrl && dataUrl.startsWith('http')) {
-      window.open(dataUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    const fallbackLink = anchors.find(
-      (a) =>
-        a.href &&
-        a.href.startsWith('http') &&
-        !a.href.includes(window.location.hostname)
-    );
-
-    if (fallbackLink) {
-      window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
-    }
   };
 
   return (
@@ -137,6 +98,9 @@ export default function JuicerHashtagFeed({
         className={`
           juicer-feed jcr-feed w-full max-w-full overflow-x-hidden list-none p-0 m-0 font-sans text-sm items-start
           !grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 gap-6 lg:gap-8
+
+          /* Disable native pointer events on inner <a> tags */
+          [&_a]:!pointer-events-none
 
           /* Reset fixed dimensions */
           [&_*]:!min-w-0 [&_*]:!max-w-full [&_*]:!box-border
@@ -167,6 +131,50 @@ export default function JuicerHashtagFeed({
         data-per="100"
         data-page="1"
       ></ul>
+
+      {/* Read More Modal */}
+      {selectedPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-lg shadow-xl overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <span className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                {selectedPost.date || 'Article'}
+              </span>
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="p-1 text-gray-400 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-4">
+              {selectedPost.image && (
+                <img
+                  src={selectedPost.image}
+                  alt="Post media"
+                  className="w-full max-h-80 object-cover rounded-md bg-gray-100"
+                />
+              )}
+              <div className="text-gray-900 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans">
+                {selectedPost.text}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end">
+              <button
+                onClick={() => setSelectedPost(null)}
+                className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-slate-900 text-white rounded hover:bg-slate-800 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Script
         src={`https://www.juicer.io/embed/${feedId}/embed-code.js`}
