@@ -1,7 +1,7 @@
 // components/JuicerHashtagFeed.tsx
 'use client';
 
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import Script from 'next/script';
 import { getPostFullText, extractHashtags } from '@/lib/hashtagFilter';
 
@@ -17,9 +17,9 @@ export default function JuicerHashtagFeed({
   tag,
   title,
 }: JuicerHashtagFeedProps) {
-  // Unique id so multiple instances of this component on the same page scope their filtering
   const containerId = useId().replace(/[:]/g, '');
   const normalizedTag = tag.toLowerCase();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Juicer) {
@@ -30,27 +30,81 @@ export default function JuicerHashtagFeed({
     if (!container) return;
 
     const filterPosts = () => {
-      const items = container.querySelectorAll('.jcr-post, .juicer-item');
+      const items = container.querySelectorAll('.jcr-post, .juicer-item, li');
+
+      if (items.length > 0) {
+        setIsLoading(false);
+      }
 
       items.forEach((item) => {
         const text = getPostFullText(item);
         const presentHashtags = extractHashtags(text);
         const shouldShow = presentHashtags.includes(normalizedTag);
 
-        (item as HTMLElement).style.display = shouldShow ? '' : 'none';
+        const el = item as HTMLElement;
+        if (shouldShow) {
+          el.classList.remove('hidden');
+          el.style.setProperty('display', 'flex', 'important');
+        } else {
+          el.classList.add('hidden');
+          el.style.setProperty('display', 'none', 'important');
+        }
       });
     };
 
     filterPosts();
 
-    // Posts load asynchronously, so keep watching for new ones
     const observer = new MutationObserver(filterPosts);
     observer.observe(container, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [containerId, normalizedTag]);
 
+  const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
+    e.stopPropagation();
+
+    const postElement = (e.target as HTMLElement).closest<HTMLElement>(
+      '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
+    );
+
+    if (!postElement) return;
+
+    const links = Array.from(postElement.querySelectorAll<HTMLAnchorElement>('a[href]'));
+    const socialLink = links.find((a) => {
+      const href = a.href;
+      return (
+        href.includes('facebook.com') ||
+        href.includes('fb.watch') ||
+        href.includes('instagram.com') ||
+        href.includes('twitter.com') ||
+        href.includes('x.com') ||
+        href.includes('linkedin.com')
+      );
+    });
+
+    if (socialLink) {
+      window.open(socialLink.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const externalUrl =
+      postElement.getAttribute('data-url') ||
+      postElement.getAttribute('data-external-url');
+
+    if (externalUrl && externalUrl.startsWith('http')) {
+      window.open(externalUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    const fallback = postElement.querySelector<HTMLAnchorElement>(
+      'a.jcr-post-timestamp, a.j-timestamp, a.jcr-post-source-icon, a.j-source-icon'
+    );
+    if (fallback && fallback.href && !fallback.href.includes('#')) {
+      window.open(fallback.href, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 overflow-x-hidden">
       <link
         rel="stylesheet"
         href="https://assets.juicer.io/embed.css"
@@ -58,17 +112,67 @@ export default function JuicerHashtagFeed({
       />
 
       {title && (
-        <h1 className="md:text-xl text-sm font-bold mb-4 text-left text-section-background font-title uppercase border-l-4 border-section-background pl-4">
+        <h1 className="md:text-base text-[10px] font-bold mb-4 text-left font-title uppercase border-l-4 border-section-background pl-4">
           {title}
         </h1>
       )}
 
+      {/* Skeleton Grid */}
+      {isLoading && (
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
+          {[1, 2, 3].map((index) => (
+            <div
+              key={index}
+              className="flex flex-col border-b border-gray-200 pb-5 animate-pulse"
+            >
+              <div className="w-full h-48 bg-gray-200 mb-3"></div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="w-6 h-6 rounded-full bg-gray-200"></div>
+                <div className="w-16 h-3 bg-gray-200"></div>
+              </div>
+              <div className="w-full h-4 bg-gray-200 mb-2"></div>
+              <div className="w-4/5 h-4 bg-gray-200 mb-2"></div>
+              <div className="w-2/3 h-4 bg-gray-200"></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Juicer Inject Target Container */}
       <ul
         id={containerId}
-        className="juicer-feed jcr-feed"
+        onClickCapture={handleFeedClick}
+        className={`
+          juicer-feed jcr-feed w-full max-w-full overflow-x-hidden list-none p-0 m-0 font-sans text-sm items-start
+          !grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 gap-6 lg:gap-8
+          ${isLoading ? 'hidden' : ''}
+
+          /* Strip Juicer's fixed min-widths and forced overflow properties */
+          [&_*]:!min-w-0 [&_*]:!max-w-full [&_*]:!box-border
+
+          /* Card Containers */
+          [&_.jcr-post]:!w-full [&_.jcr-post]:!max-w-full [&_li]:!w-full [&_li]:!max-w-full
+          [&_.jcr-post]:!flex [&_.jcr-post]:!flex-col [&_.jcr-post]:!static [&_.jcr-post]:!bg-white [&_.jcr-post]:!border-b [&_.jcr-post]:!border-gray-200 [&_.jcr-post]:!pb-5 [&_.jcr-post]:!cursor-pointer [&_.jcr-post]:!transition-colors [&_.jcr-post]:hover:!border-red-700
+          [&_li]:!flex [&_li]:!flex-col [&_li]:!static [&_li]:!bg-white [&_li]:!border-b [&_li]:!border-gray-200 [&_li]:!pb-5 [&_li]:!cursor-pointer [&_li]:!transition-colors [&_li]:hover:!border-red-700
+          
+          /* Neutralize Injected Overlays */
+          [&_.jcr-post-overlay]:!static [&_.jcr-post-overlay]:!flex [&_.jcr-post-overlay]:!flex-col [&_.jcr-post-overlay]:!p-0 [&_.jcr-post-overlay]:!bg-transparent [&_.jcr-post-overlay]:!w-full
+
+          /* 1. Images */
+          [&_img]:!static [&_img]:!block [&_img]:!w-full [&_img]:!h-48 [&_img]:!object-cover [&_img]:!bg-gray-100 [&_img]:!mb-3 [&_img]:!order-1 [&_img]:!pointer-events-none
+          [&_.jcr-post-image]:!h-48 [&_.jcr-post-image]:!w-full [&_.jcr-post-image]:!object-cover [&_.jcr-post-image]:!order-1
+
+          /* 2. Metadata Header & Author Details */
+          [&_.jcr-post-header]:!static [&_.jcr-post-header]:!flex [&_.jcr-post-header]:!items-center [&_.jcr-post-header]:!w-full [&_.jcr-post-header]:!mb-2 [&_.jcr-post-header]:!order-2
+          [&_.jcr-author-name]:!hidden
+          [&_.jcr-post-timestamp]:!ml-auto [&_.jcr-post-timestamp]:!text-[11px] [&_.jcr-post-timestamp]:!font-semibold [&_.jcr-post-timestamp]:!text-gray-500 [&_.jcr-post-timestamp]:!uppercase
+
+          /* 3. Article Headline & Excerpt */
+          [&_.jcr-post-content]:!static [&_.jcr-post-content]:!block [&_.jcr-post-content]:!w-full [&_.jcr-post-content]:!order-3
+          [&_.jcr-post-message]:!static [&_.jcr-post-message]:!line-clamp-4 [&_.jcr-post-message]:!font-bold [&_.jcr-post-message]:!text-[13px] sm:[&_.jcr-post-message]:!text-[14px] [&_.jcr-post-message]:!text-gray-900 [&_.jcr-post-message]:!leading-snug [&_.jcr-post-message]:!break-words
+        `}
         data-feed-id={feedId}
-        data-endpoint="https://www.juicer.io/api"
-        data-overlay="true"
+        data-overlay="false"
         data-per="100"
         data-page="1"
       ></ul>

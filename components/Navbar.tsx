@@ -41,9 +41,9 @@ export default function Navbar() {
 
   return (
     // Padding top prevents underlying page content (like Juicer feed) from clipping under fixed header
-    <header className="w-full pt-24 md:pt-32">
+    <header className="w-full pt-12 md:pt-16">
       <div
-        className={`fixed top-0 left-0 right-0 w-full flex items-center justify-between md:justify-center font-heading py-3 md:py-6 px-4 md:px-8 z-50 transition-all duration-200 ${
+        className={`fixed top-0 left-0 right-0 w-full flex items-center justify-between md:justify-center font-heading px-4 md:px-8 z-50 transition-all duration-200 ${
           isScrolled || isOpen ? "bg-white/95 backdrop-blur-md shadow-md" : "bg-transparent"
         }`}
       >
@@ -55,7 +55,7 @@ export default function Navbar() {
               width={110}
               height={110}
               alt="Logo"
-              className="md:w-24 md:h-24 w-16 h-16 object-contain"
+              className="md:w-16 md:h-16 w-12 h-12 object-contain"
             />
           </Link>
         </div>
@@ -91,16 +91,16 @@ export default function Navbar() {
         <section className="md:hidden flex items-center gap-4 z-50">
           <Link
             href="/login"
-            className="flex items-center justify-center bg-section-background rounded-full text-white p-2"
+            className="flex items-center justify-center bg-section-background rounded-full text-white p-1"
           >
-            <User className="w-5 h-5" />
+            <User className="w-4 h-4" />
           </Link>
           <button
             onClick={toggleMenu}
             aria-label="Toggle Navigation"
             className="p-1 text-slate-900 focus:outline-none"
           >
-            {isOpen ? <X className="w-7 h-7" /> : <Menu className="w-7 h-7" />}
+            {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
         </section>
       </div>

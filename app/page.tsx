@@ -1,22 +1,22 @@
 import JuicerFeedProvider from '@/components/JuicerFeedProvider';
+import DailyNews from '@/components/DailyNews';
 import JuicerHashtagSection from '@/components/JuicerHashtagSection';
-import UntaggedPostsSection from '@/components/UntaggedPostsSection';
+import AdConnectSection from '@/components/AdConnectSection';
 
 export default function Home() {
   return (
-    <main className="w-full min-h-screen bg-background py-12 md:py-24">
+    <main className="w-full  py-12 overflow-x-hidden bg-white text-slate-900 antialiased">
       <JuicerFeedProvider feedId="atmosphere-daily">
+        
+        {/* Untagged posts */}
+        <DailyNews />
 
-        {/* Captures all posts that do NOT have any hashtags */}
-        <UntaggedPostsSection title="Daily News" />
+        {/* Posts tagged with #adconnect */}
+        <AdConnectSection tag="#adconnect" title="AdConnect" />
 
-        {/* Captures #spotlight */}
-        <JuicerHashtagSection tag="#news" title="Spotlight News" />
-
-        {/* Captures #blog */}
+        {/* Posts tagged with #blog */}
         <JuicerHashtagSection tag="#blog" title="Blogs & Articles" />
 
-        
       </JuicerFeedProvider>
     </main>
   );
