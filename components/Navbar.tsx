@@ -121,10 +121,10 @@ export default function Navbar() {
                   <Link
                     href={link.href}
                     onClick={() => setIsOpen(false)}
-                    className="uppercase text-text text-sm font-medium tracking-wider hover:text-background-hover transition-colors"
+                    className="uppercase text-text text-[10px] font-medium tracking-wider hover:text-background-hover transition-colors"
                   >
                     {link.name}
-                    <div className="border-t border-text w-full mt-3" />
+                    <div className="border-t border-text/10 w-full mt-3" />
                   </Link>
                   
                 </div>
