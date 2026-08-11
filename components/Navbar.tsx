@@ -43,8 +43,8 @@ export default function Navbar() {
     // Padding top prevents underlying page content (like Juicer feed) from clipping under fixed header
     <header className="w-full pt-12 md:pt-16">
       <div
-        className={`fixed top-0 left-0 right-0 w-full flex items-center justify-between md:justify-center font-heading px-4 md:px-8 z-50 transition-all duration-200 ${
-          isScrolled || isOpen ? "bg-white/95 backdrop-blur-md shadow-md" : "bg-transparent"
+        className={`fixed top-0 left-0 right-0 w-full backdrop-blur-sm shadow-md flex items-center justify-between md:justify-center font-heading px-4 md:px-8 z-50 transition-all duration-200 ${
+          isScrolled || isOpen ? "bg-white/95" : "bg-transparent"
         }`}
       >
         {/* Logo */}

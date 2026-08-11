@@ -1,25 +1,30 @@
 // components/JuicerHashtagFeed.tsx
 'use client';
 
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useState, useRef } from 'react';
 import Script from 'next/script';
-import { getPostFullText, extractHashtags } from '@/lib/hashtagFilter';
+import { Loader2 } from 'lucide-react';
+import { filterPostsInContainer } from '@/lib/hashtagFilter';
 
 interface JuicerHashtagFeedProps {
   feedId: string;
-  /** This section's hashtag, e.g. "#news" or "#blog" */
+  /** Hashtag filter string, e.g. "#news" or "#blog" */
   tag: string;
   title?: string;
+  /** Minimum delay in milliseconds to keep the spinner visible (default: 1000ms) */
+  delayMs?: number;
 }
 
 export default function JuicerHashtagFeed({
   feedId,
   tag,
   title,
+  delayMs = 5000,
 }: JuicerHashtagFeedProps) {
   const containerId = useId().replace(/[:]/g, '');
-  const normalizedTag = tag.toLowerCase();
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMatches, setHasMatches] = useState(true);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && (window as any).Juicer) {
@@ -29,125 +34,121 @@ export default function JuicerHashtagFeed({
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    const filterPosts = () => {
-      const items = container.querySelectorAll('.jcr-post, .juicer-item, li');
+    const runFilter = () => {
+      const { totalItems, visibleCount } = filterPostsInContainer(container, tag);
 
-      if (items.length > 0) {
-        setIsLoading(false);
-      }
-
-      items.forEach((item) => {
-        const text = getPostFullText(item);
-        const presentHashtags = extractHashtags(text);
-        const shouldShow = presentHashtags.includes(normalizedTag);
-
-        const el = item as HTMLElement;
-        if (shouldShow) {
-          el.classList.remove('hidden');
-          el.style.setProperty('display', 'flex', 'important');
-        } else {
-          el.classList.add('hidden');
-          el.style.setProperty('display', 'none', 'important');
+      // Once Juicer injects post items into the DOM
+      if (totalItems > 0) {
+        if (!timerRef.current) {
+          // Delay content reveal to allow full image/text rendering & smooth spinner experience
+          timerRef.current = setTimeout(() => {
+            setIsLoading(false);
+            setHasMatches(visibleCount > 0);
+          }, delayMs);
         }
-      });
+      }
     };
 
-    filterPosts();
+    runFilter();
 
-    const observer = new MutationObserver(filterPosts);
+    const observer = new MutationObserver(runFilter);
     observer.observe(container, { childList: true, subtree: true });
-    return () => observer.disconnect();
-  }, [containerId, normalizedTag]);
 
- const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
-  e.stopPropagation();
+    return () => {
+      observer.disconnect();
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [containerId, tag, delayMs]);
 
-  const targetEl = e.target as HTMLElement;
+  // Handle direct card clicks to social platforms
+  const handleFeedClick = (e: React.MouseEvent<HTMLUListElement>) => {
+    e.stopPropagation();
 
-  // 1. Check if the clicked element itself or a parent is a direct <a> tag
-  const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
-  if (
-    directAnchor &&
-    directAnchor.href &&
-    !directAnchor.href.endsWith('#') &&
-    !directAnchor.href.startsWith('javascript:')
-  ) {
-    window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    const targetEl = e.target as HTMLElement;
 
-  // 2. Identify the post card container or list item
-  const postElement = targetEl.closest<HTMLElement>(
-    '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
-  );
+    // 1. Direct anchor tag click
+    const directAnchor = targetEl.closest<HTMLAnchorElement>('a[href]');
+    if (
+      directAnchor &&
+      directAnchor.href &&
+      !directAnchor.href.endsWith('#') &&
+      !directAnchor.href.startsWith('javascript:')
+    ) {
+      window.open(directAnchor.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
-  if (!postElement) return;
-
-  // 3. Check if the post container itself is an anchor tag
-  if (
-    postElement instanceof HTMLAnchorElement &&
-    postElement.href &&
-    !postElement.href.endsWith('#')
-  ) {
-    window.open(postElement.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
-
-  // 4. Gather ALL <a> tags on or inside the post card
-  const anchors = Array.from(
-    postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
-  );
-  if (postElement instanceof HTMLAnchorElement) {
-    anchors.unshift(postElement);
-  }
-
-  // Find social network URLs (Facebook, Instagram, X/Twitter, LinkedIn)
-  const socialLink = anchors.find((a) => {
-    const href = a.href || '';
-    return (
-      href.includes('facebook.com') ||
-      href.includes('fb.watch') ||
-      href.includes('instagram.com') ||
-      href.includes('twitter.com') ||
-      href.includes('x.com') ||
-      href.includes('linkedin.com')
+    // 2. Identify parent post card
+    const postElement = targetEl.closest<HTMLElement>(
+      '.jcr-post, .juicer-item, .j-stack, .j-poster, li'
     );
-  });
 
-  if (socialLink && socialLink.href) {
-    window.open(socialLink.href, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    if (!postElement) return;
 
-  // 5. Extract Juicer data attributes (where Juicer often stores the real post URL)
-  const dataUrl =
-    postElement.getAttribute('data-url') ||
-    postElement.getAttribute('data-permalink') ||
-    postElement.getAttribute('data-external-url') ||
-    postElement.getAttribute('data-link') ||
-    postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
-    postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
+    // 3. Post element itself is an anchor tag
+    if (
+      postElement instanceof HTMLAnchorElement &&
+      postElement.href &&
+      !postElement.href.endsWith('#')
+    ) {
+      window.open(postElement.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
 
-  if (dataUrl && dataUrl.startsWith('http')) {
-    window.open(dataUrl, '_blank', 'noopener,noreferrer');
-    return;
-  }
+    // 4. Search for social network link targets
+    const anchors = Array.from(
+      postElement.querySelectorAll<HTMLAnchorElement>('a[href]')
+    );
+    if (postElement instanceof HTMLAnchorElement) {
+      anchors.unshift(postElement);
+    }
 
-  // 6. Fallback: Use any non-relative valid HTTP link found inside the card
-  const fallbackLink = anchors.find(
-    (a) =>
-      a.href &&
-      a.href.startsWith('http') &&
-      !a.href.includes(window.location.hostname)
-  );
+    const socialLink = anchors.find((a) => {
+      const href = a.href || '';
+      return (
+        href.includes('facebook.com') ||
+        href.includes('fb.watch') ||
+        href.includes('instagram.com') ||
+        href.includes('twitter.com') ||
+        href.includes('x.com') ||
+        href.includes('linkedin.com')
+      );
+    });
 
-  if (fallbackLink) {
-    window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
-  }
-};
+    if (socialLink && socialLink.href) {
+      window.open(socialLink.href, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 5. Fallback to Juicer data attributes
+    const dataUrl =
+      postElement.getAttribute('data-url') ||
+      postElement.getAttribute('data-permalink') ||
+      postElement.getAttribute('data-external-url') ||
+      postElement.getAttribute('data-link') ||
+      postElement.querySelector('[data-url]')?.getAttribute('data-url') ||
+      postElement.querySelector('[data-permalink]')?.getAttribute('data-permalink');
+
+    if (dataUrl && dataUrl.startsWith('http')) {
+      window.open(dataUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 6. Generic external link fallback
+    const fallbackLink = anchors.find(
+      (a) =>
+        a.href &&
+        a.href.startsWith('http') &&
+        !a.href.includes(window.location.hostname)
+    );
+
+    if (fallbackLink) {
+      window.open(fallbackLink.href, '_blank', 'noopener,noreferrer');
+    }
+  };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 overflow-x-hidden">
+    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mb-12 overflow-x-hidden font-body">
       <link
         rel="stylesheet"
         href="https://assets.juicer.io/embed.css"
@@ -160,24 +161,20 @@ export default function JuicerHashtagFeed({
         </h1>
       )}
 
-      {/* Skeleton Grid */}
+      {/* Standalone React Spinner Loader */}
       {isLoading && (
-        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
-          {[1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className="flex flex-col border-b border-gray-200 pb-5 animate-pulse"
-            >
-              <div className="w-full h-48 bg-gray-200 mb-3"></div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="w-6 h-6 rounded-full bg-gray-200"></div>
-                <div className="w-16 h-3 bg-gray-200"></div>
-              </div>
-              <div className="w-full h-4 bg-gray-200 mb-2"></div>
-              <div className="w-4/5 h-4 bg-gray-200 mb-2"></div>
-              <div className="w-2/3 h-4 bg-gray-200"></div>
-            </div>
-          ))}
+        <div className="flex flex-col items-center justify-center py-16 w-full space-y-3">
+          <Loader2 className="w-8 h-8 animate-spin text-red-700" />
+          <p className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-slate-500">
+            Fetching Posts...
+          </p>
+        </div>
+      )}
+
+      {/* Empty State Notice */}
+      {!isLoading && !hasMatches && (
+        <div className="flex items-center justify-center py-12 text-slate-400 text-xs sm:text-sm font-semibold uppercase tracking-wider">
+          No posts found for {tag}
         </div>
       )}
 
@@ -188,9 +185,10 @@ export default function JuicerHashtagFeed({
         className={`
           juicer-feed jcr-feed w-full max-w-full overflow-x-hidden list-none p-0 m-0 font-sans text-sm items-start
           !grid !grid-cols-1 sm:!grid-cols-2 lg:!grid-cols-3 gap-6 lg:gap-8
-          ${isLoading ? 'hidden' : ''}
+          transition-opacity duration-300
+          ${isLoading || !hasMatches ? 'opacity-0 h-0 overflow-hidden pointer-events-none' : 'opacity-100 h-auto'}
 
-          /* Strip Juicer's fixed min-widths and forced overflow properties */
+          /* Universal min-width reset to stop horizontal scrollbars */
           [&_*]:!min-w-0 [&_*]:!max-w-full [&_*]:!box-border
 
           /* Card Containers */
@@ -198,19 +196,19 @@ export default function JuicerHashtagFeed({
           [&_.jcr-post]:!flex [&_.jcr-post]:!flex-col [&_.jcr-post]:!static [&_.jcr-post]:!bg-white [&_.jcr-post]:!border-b [&_.jcr-post]:!border-gray-200 [&_.jcr-post]:!pb-5 [&_.jcr-post]:!cursor-pointer [&_.jcr-post]:!transition-colors [&_.jcr-post]:hover:!border-red-700
           [&_li]:!flex [&_li]:!flex-col [&_li]:!static [&_li]:!bg-white [&_li]:!border-b [&_li]:!border-gray-200 [&_li]:!pb-5 [&_li]:!cursor-pointer [&_li]:!transition-colors [&_li]:hover:!border-red-700
           
-          /* Neutralize Injected Overlays */
+          /* Neutralize Juicer Modal Overlays */
           [&_.jcr-post-overlay]:!static [&_.jcr-post-overlay]:!flex [&_.jcr-post-overlay]:!flex-col [&_.jcr-post-overlay]:!p-0 [&_.jcr-post-overlay]:!bg-transparent [&_.jcr-post-overlay]:!w-full
 
           /* 1. Images */
           [&_img]:!static [&_img]:!block [&_img]:!w-full [&_img]:!h-48 [&_img]:!object-cover [&_img]:!bg-gray-100 [&_img]:!mb-3 [&_img]:!order-1 [&_img]:!pointer-events-none
           [&_.jcr-post-image]:!h-48 [&_.jcr-post-image]:!w-full [&_.jcr-post-image]:!object-cover [&_.jcr-post-image]:!order-1
 
-          /* 2. Metadata Header & Author Details */
+          /* 2. Metadata Header & Timestamps */
           [&_.jcr-post-header]:!static [&_.jcr-post-header]:!flex [&_.jcr-post-header]:!items-center [&_.jcr-post-header]:!w-full [&_.jcr-post-header]:!mb-2 [&_.jcr-post-header]:!order-2
           [&_.jcr-author-name]:!hidden
           [&_.jcr-post-timestamp]:!ml-auto [&_.jcr-post-timestamp]:!text-[11px] [&_.jcr-post-timestamp]:!font-semibold [&_.jcr-post-timestamp]:!text-gray-500 [&_.jcr-post-timestamp]:!uppercase
 
-          /* 3. Article Headline & Excerpt */
+          /* 3. Text Message & Headlines */
           [&_.jcr-post-content]:!static [&_.jcr-post-content]:!block [&_.jcr-post-content]:!w-full [&_.jcr-post-content]:!order-3
           [&_.jcr-post-message]:!static [&_.jcr-post-message]:!line-clamp-4 [&_.jcr-post-message]:!font-bold [&_.jcr-post-message]:!text-[13px] sm:[&_.jcr-post-message]:!text-[14px] [&_.jcr-post-message]:!text-gray-900 [&_.jcr-post-message]:!leading-snug [&_.jcr-post-message]:!break-words
         `}
