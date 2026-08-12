@@ -1,23 +1,57 @@
-'use client';
+// app/page.tsx
+import { getJuicerPosts, filterPostsByHashtag } from '@/lib/juicer';
+import FeedGrid from '@/components/FeedGrid';
+import PostSpotlight from '@/components/PostSpotlight';
 
-import JuicerFeedProvider from '@/components/JuicerFeedProvider';
-import DailyNews from '@/components/DailyNews';
-import JuicerHashtagSection from '@/components/JuicerHashtagSection';
-import AdConnectSection from '@/components/AdConnectSection';
+export default async function HomePage() {
+  const posts = await getJuicerPosts('atmosphere-daily');
 
-export default function Home() {
+  const adConnectPosts = filterPostsByHashtag(posts, '#adconnect');
+  const blogPosts = filterPostsByHashtag(posts, '#blog');
+
   return (
-    <main className="w-full min-h-screen py-12 overflow-x-hidden bg-white text-slate-900 antialiased">
-      <JuicerFeedProvider feedId="atmosphere-daily">
-        {/* Untagged posts */}
-        <DailyNews />
+    <main className="w-full min-h-screen py-12 bg-white text-slate-900 antialiased">
+      
+      {/* Daily News Section (Masonry, No title, Hashtag placeholder for text posts) */}
+      <FeedGrid
+        posts={posts.slice(1)}
+        variant="masonry"
+        initialCount={6}
+        viewMoreHref="/daily-news"
+        viewMoreLabel="View More Daily News"
+        defaultHashtag="#DAILYNEWS"
+      />
 
-        {/* Posts tagged with #adconnect */}
-        <AdConnectSection tag="#adconnect" title="AdConnect" />
+      {/* AdConnect Section (Uniform Grid) */}
+      <FeedGrid
+        posts={adConnectPosts}
+        title="AD Connect"
+        initialCount={6}
+        viewMoreHref="/adconnect"
+        viewMoreLabel="View More Posts"
+        defaultHashtag="#ADCONNECT"
+      />
 
-        {/* Posts tagged with #blog */}
-        <JuicerHashtagSection tag="#blog" title="Blogs & Articles" />
-      </JuicerFeedProvider>
+      {/* Blogs Section (Manual Horizontal Slider) */}
+      <FeedGrid
+        posts={blogPosts}
+        title="Blogs & Articles"
+        variant="slider"
+        initialCount={10}
+        viewMoreHref="/blog"
+        viewMoreLabel="View All Articles"
+        defaultHashtag="#BLOG"
+      />
+
+      {/* Featured Spotlight Card */}
+      {posts[0] && (
+        <PostSpotlight
+          post={posts[0]}
+          title="Featured Spotlight"
+          viewMoreHref="/daily-news"
+          viewMoreLabel="All Daily News"
+        />
+      )}
     </main>
   );
 }
