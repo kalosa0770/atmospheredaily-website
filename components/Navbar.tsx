@@ -35,7 +35,7 @@ export default function Navbar() {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
-    <header className="w-full pt-4 md:pt-16 font-body antialiased">
+    <header className="w-full pt-12 md:pt-16 font-body antialiased">
       <div
         className={`fixed top-0 left-0 right-0 w-full backdrop-blur-md shadow-sm flex items-center justify-between md:justify-center px-4 md:px-8 z-50 transition-all duration-200 border-b border-gray-100 ${
           isScrolled || isOpen ? "bg-white/95" : "bg-white/80"
@@ -121,7 +121,7 @@ export default function Navbar() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="fixed inset-0 w-full h-screen bg-white flex flex-col justify-center py-32 my-12 px-6 overflow-y-auto z-40"
+            className="fixed inset-0 w-full h-screen bg-white flex flex-col justify-center py-32 my-6 px-6 overflow-y-auto z-40"
           >
             <nav className="flex flex-col gap-5 max-w-sm w-full mx-auto">
               {navLinks.map((link) => {

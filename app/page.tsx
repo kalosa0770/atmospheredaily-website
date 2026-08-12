@@ -26,6 +26,7 @@ export default async function HomePage() {
       <FeedGrid
         posts={adConnectPosts}
         title="AD Connect"
+        variant="list"
         initialCount={6}
         viewMoreHref="/adconnect"
         viewMoreLabel="View More Posts"

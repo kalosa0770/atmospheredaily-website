@@ -11,16 +11,18 @@ export const metadata = {
 export default async function SpotlightPage() {
   const posts = await getJuicerPosts('atmosphere-daily');
   
-  // Optionally filter by #spotlight or #featured hashtag if present in your feed
-  const taggedSpotlights = filterPostsByHashtag(posts, '#spotlight');
-  const spotlightPosts = taggedSpotlights.length > 0 ? taggedSpotlights : posts;
+  // Filter all posts tagged with #spotlight (case-insensitive)
+  const spotlightPosts = filterPostsByHashtag(posts, '#spotlight');
 
-  const featuredPost = spotlightPosts[0];
-  const secondaryPosts = spotlightPosts.slice(1);
+  // Fall back to all posts if no specific #spotlight hashtags are found
+  const displayPosts = spotlightPosts.length > 0 ? spotlightPosts : posts;
+
+  const featuredPost = displayPosts[0];
+  const secondaryPosts = displayPosts.slice(1);
 
   return (
     <main className="w-full min-h-screen py-12 bg-white text-slate-900 antialiased">
-      {/* Featured Main Spotlight */}
+      {/* Primary Featured Spotlight */}
       {featuredPost && (
         <PostSpotlight
           post={featuredPost}
@@ -29,13 +31,13 @@ export default async function SpotlightPage() {
         />
       )}
 
-      {/* Grid of Other Spotlight Stories */}
+      {/* Grid displaying all remaining Spotlight stories */}
       {secondaryPosts.length > 0 && (
         <FeedGrid
           posts={secondaryPosts}
-          title="More Featured Stories"
+          title="More Spotlight Stories"
           variant="grid"
-          initialCount={50}
+          initialCount={secondaryPosts.length} // Renders all remaining posts without truncating
           defaultHashtag="#SPOTLIGHT"
         />
       )}
