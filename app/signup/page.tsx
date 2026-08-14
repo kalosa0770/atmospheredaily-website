@@ -27,7 +27,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <main className="w-full min-h-[85vh] bg-background flex items-center justify-center px-4 py-12 font-body antialiased">
+    <main className="w-full min-h-[85vh] bg-background flex items-center justify-center px-4 md:py-32 py-24 font-body antialiased">
       <div className="w-full max-w-md bg-white border border-text/10 shadow-sm p-6 sm:p-8 rounded-none">
         {/* Header & Logo */}
         <div className="flex flex-col items-center text-center mb-8">

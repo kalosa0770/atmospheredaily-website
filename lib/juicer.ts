@@ -4,6 +4,8 @@ export interface JuicerPost {
   id: number;
   message: string;
   image: string | null;
+  video?: string | null;
+  video_url?: string | null;
   external_created_at: string;
   full_url: string;
   source_type: string;
@@ -16,8 +18,6 @@ export interface JuicerFeedResponse {
     items: JuicerPost[];
   };
 }
-
-// lib/juicer.ts
 
 /**
  * Formats ISO date strings into relative time ("3 hours ago", "12 mins ago") 
@@ -144,6 +144,3 @@ export function filterPostsByHashtag(
     return tags.includes(normalizedTag);
   });
 }
-
-
-

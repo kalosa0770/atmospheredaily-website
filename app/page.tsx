@@ -22,6 +22,7 @@ export default async function HomePage() {
         viewMoreHref="/daily-news"
         viewMoreLabel="View More Daily News"
         defaultHashtag="#DAILYNEWS"
+        
       />
 
       {/* AdConnect Section (Uniform Grid) */}

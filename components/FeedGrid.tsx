@@ -80,17 +80,33 @@ export default function FeedGrid({
         playPromise.catch(() => {
           // Fallback to muted playback if blocked by browser policy
           video.muted = true;
-          setIsMuted(true);
           video.play().catch((err) => console.log('Autoplay blocked:', err));
         });
       }
     }
   }, [selectedPost]);
 
+  // Keep isMuted in sync with the ACTUAL video element state, no matter
+  // what changed it (our custom button, native controls, or the
+  // autoplay-blocked fallback above). This is what the old code was
+  // missing: it set isMuted manually in a couple of places but never
+  // listened for the real, authoritative state, so the two could drift
+  // apart and the "Tap To Unmute" button could show/hide incorrectly.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const syncMuted = () => setIsMuted(video.muted);
+    syncMuted(); // sync immediately on mount too
+
+    video.addEventListener('volumechange', syncMuted);
+    return () => video.removeEventListener('volumechange', syncMuted);
+  }, [selectedPost]);
+
   const toggleMute = () => {
     if (videoRef.current) {
       videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+      // isMuted state now updates itself via the volumechange listener above
     }
   };
 
