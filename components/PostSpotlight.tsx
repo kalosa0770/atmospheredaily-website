@@ -98,7 +98,7 @@ export default function PostSpotlight({
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsOpen(true)}
-              className="inline-flex items-center gap-2 px-2 py-1 text-[10px] font-heading tracking-wider text-white bg-section-background hover:bg-section-background/80 transition-colors duration-200 rounded-none"
+              className="inline-flex items-center gap-2 px-2 py-1 text-[10px] md:text-sm font-heading tracking-wider text-white bg-section-background hover:bg-section-background/80 transition-colors duration-200 rounded-none"
             >
               Read More
             </button>
@@ -106,7 +106,7 @@ export default function PostSpotlight({
             {viewMoreHref && (
               <Link
                 href={viewMoreHref}
-                className="inline-flex items-center gap-1 text-[10px] font-heading  tracking-wider text-text/70 hover:text-text transition-colors"
+                className="inline-flex items-center gap-1 text-[10px] md:text-sm font-heading  tracking-wider text-text/70 hover:text-text transition-colors"
               >
                 {viewMoreLabel} <ArrowRight className="w-4 h-4" />
               </Link>

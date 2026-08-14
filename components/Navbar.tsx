@@ -16,6 +16,7 @@ const navLinks = [
   { id: 5, name: "Spotlight", href: "/spotlight" },
   { id: 6, name: "My Store", href: "/store" },
   { id: 7, name: "About Us", href: "/about" },
+  { id: 8, name: "Contact Us", href: "/contact" },
 ];
 
 export default function Navbar() {
@@ -35,7 +36,7 @@ export default function Navbar() {
   const toggleMenu = () => setIsOpen(!isOpen);
 
   return (
-    <header className="w-full pt-12 md:pt-16 font-body antialiased">
+    <header className="w-full font-body antialiased">
       <div
         className={`fixed top-0 left-0 right-0 w-full backdrop-blur-md shadow-sm flex items-center justify-between md:justify-center px-4 md:px-8 z-50 transition-all duration-200 border-b border-gray-100 ${
           isScrolled || isOpen ? "bg-white/95" : "bg-white/80"
@@ -60,7 +61,7 @@ export default function Navbar() {
             const isActive = pathname === link.href;
 
             return (
-              <div className="px-3 lg:px-4" key={link.id}>
+              <div className="px-2.5 lg:px-3" key={link.id}>
                 <Link
                   href={link.href}
                   className={`uppercase tracking-wider font-heading text-[10px] transition-all duration-150 relative py-2 ${
@@ -73,7 +74,7 @@ export default function Navbar() {
                   {isActive && (
                     <motion.div
                       layoutId="activeNavIndicator"
-                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-section-background rounded-none"
+                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-button-hover rounded-none"
                     />
                   )}
                 </Link>
@@ -86,7 +87,7 @@ export default function Navbar() {
         <div className="hidden md:inline-flex ml-4">
           <Link
             href="/login"
-            className="flex items-center gap-2 bg-text text-white hover:bg-section-background px-5 py-2 transition-colors rounded-none"
+            className="flex items-center gap-2 bg-text text-white hover:bg-section-background px-4 py-2 transition-colors rounded-none"
           >
             <User className="w-4 h-4" />
             <span className="uppercase text-[10px] tracking-wider">
@@ -106,7 +107,7 @@ export default function Navbar() {
           <button
             onClick={toggleMenu}
             aria-label="Toggle Navigation"
-            className="p-1 text-text border border-text/20 rounded-none focus:outline-none bg-white"
+            className="p-1 text-text border border-text/20 rounded-none focus:outline-none bg-white cursor-pointer"
           >
             {isOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
@@ -123,7 +124,7 @@ export default function Navbar() {
             transition={{ duration: 0.25, ease: "easeInOut" }}
             className="fixed inset-0 w-full h-screen bg-white flex flex-col justify-center py-32 my-6 px-6 overflow-y-auto z-40"
           >
-            <nav className="flex flex-col gap-5 max-w-sm w-full mx-auto">
+            <nav className="flex flex-col gap-4 max-w-sm w-full mx-auto">
               {navLinks.map((link) => {
                 const isActive = pathname === link.href;
 
@@ -132,13 +133,13 @@ export default function Navbar() {
                     <Link
                       href={link.href}
                       onClick={() => setIsOpen(false)}
-                      className={`uppercase text-[10px] font-heading tracking-wider py-2 transition-colors ${
-                        isActive ? "text-section-background" : "text-section-background hover:text-section-background"
+                      className={`uppercase text-[10px] font-heading tracking-wider py-1.5 transition-colors ${
+                        isActive ? "text-button-hover font-bold" : "text-section-background hover:text-section-background"
                       }`}
                     >
                       {link.name}
                     </Link>
-                    <div className="border-t border-text/10 w-full mt-2" />
+                    <div className="border-t border-text/10 w-full mt-1.5" />
                   </div>
                 );
               })}

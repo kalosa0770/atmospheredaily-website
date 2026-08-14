@@ -2,6 +2,7 @@
 import { getJuicerPosts, filterPostsByHashtag } from '@/lib/juicer';
 import FeedGrid from '@/components/FeedGrid';
 import PostSpotlight from '@/components/PostSpotlight';
+import HeroSection from '@/components/HeroSection';
 
 export default async function HomePage() {
   const posts = await getJuicerPosts('atmosphere-daily');
@@ -10,7 +11,8 @@ export default async function HomePage() {
   const blogPosts = filterPostsByHashtag(posts, '#blog');
 
   return (
-    <main className="w-full min-h-screen py-12 bg-white text-slate-900 antialiased">
+    <main className="flex flex-col gap-12 w-full min-h-screen py-12 bg-white text-slate-900 antialiased">
+      <HeroSection />
       
       {/* Daily News Section (Masonry, No title, Hashtag placeholder for text posts) */}
       <FeedGrid

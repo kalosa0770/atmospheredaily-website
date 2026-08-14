@@ -89,7 +89,7 @@ export default function FeedGrid({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-6">
         {title && (
-          <h2 className="md:text-sm text-[10px] font-heading text-left uppercase border-l-4 border-section-background pl-4 text-text">
+          <h2 className="md:text-sm text-[10px] font-heading text-left uppercase border-l-4 border-button-hover pl-4 text-text">
             {title}
           </h2>
         )}
@@ -99,14 +99,14 @@ export default function FeedGrid({
             <button
               onClick={() => scrollSlider('left')}
               aria-label="Previous posts"
-              className="p-2 border border-text/30 hover:border-text/90 text-text hover:text-text/80 transition-colors rounded-none bg-white"
+              className="p-2 border border-text/30 hover:border-text/90 text-text hover:text-text/80 transition-colors rounded-none bg-white cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollSlider('right')}
               aria-label="Next posts"
-              className="p-2 border border-text/30 hover:border-text/90 text-text hover:text-text/80 transition-colors rounded-none bg-white"
+              className="p-2 border border-text/30 hover:border-text/90 text-text hover:text-text/80 transition-colors rounded-none bg-white cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -125,7 +125,7 @@ export default function FeedGrid({
             <article
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="snap-center flex-none w-[280px] sm:w-[320px] lg:w-[350px] flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-section-background group rounded-none"
+              className="snap-center flex-none w-[280px] sm:w-[320px] lg:w-[350px] flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
             >
               {post.image ? (
                 <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none">
@@ -164,7 +164,7 @@ export default function FeedGrid({
             <article
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="flex flex-row sm:flex-col items-start gap-3 sm:gap-0 bg-white border-b border-text/20 pb-4 sm:pb-5 cursor-pointer transition-colors hover:border-section-background group rounded-none"
+              className="flex flex-row sm:flex-col items-start gap-3 sm:gap-0 bg-white border-b border-text/20 pb-4 sm:pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
             >
               {/* Media Thumbnail */}
               {post.image ? (
@@ -208,7 +208,7 @@ export default function FeedGrid({
             <article
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="break-inside-avoid flex flex-col bg-white border-b border-text/20 pb-5 cursor-pointer transition-colors hover:border-text/50 group rounded-none"
+              className="break-inside-avoid flex flex-col bg-white border-b border-text/20 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
             >
               {post.image ? (
                 <div className="w-full bg-text/10 mb-3 overflow-hidden rounded-none">
@@ -247,7 +247,7 @@ export default function FeedGrid({
             <article
               key={post.id}
               onClick={() => setSelectedPost(post)}
-              className="flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-section-background group rounded-none"
+              className="flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
             >
               {post.image ? (
                 <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none">
@@ -286,7 +286,7 @@ export default function FeedGrid({
         <div className="mt-8 flex justify-center">
           <Link
             href={viewMoreHref}
-            className="inline-flex items-center gap-2 px-6 py-2.5 text-[10px] font-heading uppercase tracking-wider text-text/80 bg-text/10 hover:bg-text hover:text-white transition-colors duration-200 rounded-none"
+            className="inline-flex items-center gap-2 px-6 py-2.5 text-[10px] font-heading uppercase tracking-wider text-text/80 bg-text/10 hover:bg-button-hover hover:text-text transition-colors duration-200 rounded-none font-bold"
           >
             {viewMoreLabel} <ArrowRight className="w-4 h-4" />
           </Link>
@@ -303,7 +303,7 @@ export default function FeedGrid({
               </span>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="p-1 text-text/50 hover:text-text hover:bg-text/10 transition-colors rounded-none"
+                className="p-1 text-text/50 hover:text-text hover:bg-text/10 transition-colors rounded-none cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -339,7 +339,7 @@ export default function FeedGrid({
               </a>
               <button
                 onClick={() => setSelectedPost(null)}
-                className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider bg-slate-900 text-white hover:bg-slate-800 transition-colors rounded-none"
+                className="px-4 py-2 text-[10px] font-bold uppercase tracking-wider bg-button-background text-section-text hover:bg-button-hover hover:text-text transition-colors rounded-none cursor-pointer"
               >
                 Close
               </button>
