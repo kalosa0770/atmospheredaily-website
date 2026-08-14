@@ -1,9 +1,9 @@
 // components/FeedGrid.tsx
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { X, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ArrowRight, ChevronLeft, ChevronRight, Play, Volume2, VolumeX } from 'lucide-react';
 import { JuicerPost, extractHashtags, formatRelativeDateTime } from '@/lib/juicer';
 
 interface FeedGridProps {
@@ -45,6 +45,14 @@ function renderMessageWithLinks(text: string) {
   });
 }
 
+function getPostVideoUrl(post: JuicerPost): string | null {
+  if (post.video) return post.video;
+  if ((post as unknown as { video_url?: string }).video_url) {
+    return (post as unknown as { video_url?: string }).video_url || null;
+  }
+  return null;
+}
+
 export default function FeedGrid({
   posts,
   title,
@@ -55,7 +63,36 @@ export default function FeedGrid({
   defaultHashtag = '#NEWS',
 }: FeedGridProps) {
   const [selectedPost, setSelectedPost] = useState<JuicerPost | null>(null);
+  const [isMuted, setIsMuted] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Play handler with unmuted fallback
+  useEffect(() => {
+    if (selectedPost && videoRef.current) {
+      const video = videoRef.current;
+      video.currentTime = 0;
+      video.muted = false; // Attempt unmuted first
+
+      const playPromise = video.play();
+
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Fallback to muted playback if blocked by browser policy
+          video.muted = true;
+          setIsMuted(true);
+          video.play().catch((err) => console.log('Autoplay blocked:', err));
+        });
+      }
+    }
+  }, [selectedPost]);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
 
   if (!posts || posts.length === 0) {
     return (
@@ -121,163 +158,233 @@ export default function FeedGrid({
           className="flex gap-6 overflow-x-auto snap-x snap-mandatory scrollbar-none pb-4 -mx-4 px-4 sm:mx-0 sm:px-0"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {visiblePosts.map((post) => (
-            <article
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="snap-center flex-none w-[280px] sm:w-[320px] lg:w-[350px] flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
-            >
-              {post.image ? (
-                <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none">
-                  <img
-                    src={post.image}
-                    alt="Post media"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none">
-                  <span className="text-white text-lg font-black tracking-widest uppercase">
-                    {getPostTagPlaceholder(post)}
-                  </span>
-                </div>
-              )}
+          {visiblePosts.map((post) => {
+            const hasVideo = Boolean(getPostVideoUrl(post));
 
-              <div className="pr-12 flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
-                <span className="text-red-700 font-bold">
-                  {post.source_type}
-                </span>
-                <span>{formatRelativeDateTime(post.external_created_at)}</span>
-              </div>
+            return (
+              <article
+                key={post.id}
+                onClick={() => setSelectedPost(post)}
+                className="snap-center flex-none w-[280px] sm:w-[320px] lg:w-[350px] flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
+              >
+                {post.image ? (
+                  <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none relative">
+                    <img
+                      src={post.image}
+                      alt="Post media"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none relative">
+                    <span className="text-white text-lg font-black tracking-widest uppercase">
+                      {getPostTagPlaceholder(post)}
+                    </span>
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              <p className="px-4 text-[10px] sm:text-sm text-text leading-snug line-clamp-4 break-words">
-                {renderMessageWithLinks(post.message)}
-              </p>
-            </article>
-          ))}
-        </div>
-      ) : variant === 'list' ? (
-        /* 2. COMPACT LIST VARIANT (BBC Mobile Style: Thumbnail Left, Text Right) */
-        <div className="flex flex-col space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 lg:gap-8">
-          {visiblePosts.map((post) => (
-            <article
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="flex flex-row sm:flex-col items-start gap-3 sm:gap-0 bg-white border-b border-text/20 pb-4 sm:pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
-            >
-              {/* Media Thumbnail */}
-              {post.image ? (
-                <div className="w-24 h-24 sm:w-full sm:h-48 flex-none bg-section-background sm:mb-3 overflow-hidden rounded-none">
-                  <img
-                    src={post.image}
-                    alt="Post media"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="w-24 h-24 sm:w-full sm:h-48 flex-none bg-text sm:mb-3 flex items-center justify-center p-2 text-center rounded-none">
-                  <span className="text-white text-xs sm:text-lg font-black tracking-widest uppercase">
-                    {getPostTagPlaceholder(post)}
-                  </span>
-                </div>
-              )}
-
-              {/* Text & Metadata Column */}
-              <div className="flex flex-col min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
+                <div className="pr-12 flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
                   <span className="text-red-700 font-bold">
                     {post.source_type}
                   </span>
-                  <span>•</span>
                   <span>{formatRelativeDateTime(post.external_created_at)}</span>
                 </div>
 
-                <p className="text-xs sm:text-sm font-bold text-text leading-snug line-clamp-3 sm:line-clamp-4 break-words">
+                <p className="px-4 text-[10px] sm:text-sm text-text leading-snug line-clamp-4 break-words">
                   {renderMessageWithLinks(post.message)}
                 </p>
-              </div>
-            </article>
-          ))}
+              </article>
+            );
+          })}
+        </div>
+      ) : variant === 'list' ? (
+        /* 2. COMPACT LIST VARIANT */
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:gap-6 lg:gap-8">
+          {visiblePosts.map((post) => {
+            const hasVideo = Boolean(getPostVideoUrl(post));
+
+            return (
+              <article
+                key={post.id}
+                onClick={() => setSelectedPost(post)}
+                className="flex flex-row sm:flex-col items-start gap-3 sm:gap-0 bg-white border-b border-text/20 pb-4 sm:pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
+              >
+                {post.image ? (
+                  <div className="w-24 h-24 sm:w-full sm:h-48 flex-none bg-section-background sm:mb-3 overflow-hidden rounded-none relative">
+                    <img
+                      src={post.image}
+                      alt="Post media"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-24 h-24 sm:w-full sm:h-48 flex-none bg-text sm:mb-3 flex items-center justify-center p-2 text-center rounded-none relative">
+                    <span className="text-white text-xs sm:text-lg font-black tracking-widest uppercase">
+                      {getPostTagPlaceholder(post)}
+                    </span>
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex flex-col min-w-0 flex-1">
+                  <div className="flex items-center gap-2 mb-1 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
+                    <span className="text-red-700 font-bold">
+                      {post.source_type}
+                    </span>
+                    <span>•</span>
+                    <span>{formatRelativeDateTime(post.external_created_at)}</span>
+                  </div>
+
+                  <p className="text-xs sm:text-sm font-bold text-text leading-snug line-clamp-3 sm:line-clamp-4 break-words">
+                    {renderMessageWithLinks(post.message)}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       ) : variant === 'masonry' ? (
         /* 3. MASONRY VARIANT */
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-6 lg:gap-8 space-y-6 lg:space-y-8">
-          {visiblePosts.map((post) => (
-            <article
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="break-inside-avoid flex flex-col bg-white border-b border-text/20 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
-            >
-              {post.image ? (
-                <div className="w-full bg-text/10 mb-3 overflow-hidden rounded-none">
-                  <img
-                    src={post.image}
-                    alt="Post media"
-                    className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none">
-                  <span className="text-white text-lg font-black tracking-widest uppercase">
-                    {getPostTagPlaceholder(post)}
+          {visiblePosts.map((post) => {
+            const hasVideo = Boolean(getPostVideoUrl(post));
+
+            return (
+              <article
+                key={post.id}
+                onClick={() => setSelectedPost(post)}
+                className="break-inside-avoid flex flex-col bg-white border-b border-text/20 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
+              >
+                {post.image ? (
+                  <div className="w-full bg-text/10 mb-3 overflow-hidden rounded-none relative">
+                    <img
+                      src={post.image}
+                      alt="Post media"
+                      className="w-full h-auto object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none relative">
+                    <span className="text-white text-lg font-black tracking-widest uppercase">
+                      {getPostTagPlaceholder(post)}
+                    </span>
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
+                  <span className="text-red-700 font-bold">
+                    {post.source_type}
                   </span>
+                  <span>{formatRelativeDateTime(post.external_created_at)}</span>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
-                <span className="text-red-700 font-bold">
-                  {post.source_type}
-                </span>
-                <span>{formatRelativeDateTime(post.external_created_at)}</span>
-              </div>
-
-              <p className="text-xs sm:text-sm font-body text-text leading-snug line-clamp-4 break-words">
-                {renderMessageWithLinks(post.message)}
-              </p>
-            </article>
-          ))}
+                <p className="text-xs sm:text-sm font-body text-text leading-snug line-clamp-4 break-words">
+                  {renderMessageWithLinks(post.message)}
+                </p>
+              </article>
+            );
+          })}
         </div>
       ) : (
         /* 4. UNIFORM GRID VARIANT */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
-          {visiblePosts.map((post) => (
-            <article
-              key={post.id}
-              onClick={() => setSelectedPost(post)}
-              className="flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
-            >
-              {post.image ? (
-                <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none">
-                  <img
-                    src={post.image}
-                    alt="Post media"
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-              ) : (
-                <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none">
-                  <span className="text-white text-lg font-black tracking-widest uppercase">
-                    {getPostTagPlaceholder(post)}
+          {visiblePosts.map((post) => {
+            const hasVideo = Boolean(getPostVideoUrl(post));
+
+            return (
+              <article
+                key={post.id}
+                onClick={() => setSelectedPost(post)}
+                className="flex flex-col bg-white border-b border-text/30 pb-5 cursor-pointer transition-colors hover:border-button-hover group rounded-none"
+              >
+                {post.image ? (
+                  <div className="w-full h-48 bg-section-background mb-3 overflow-hidden rounded-none relative">
+                    <img
+                      src={post.image}
+                      alt="Post media"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-48 bg-text mb-3 flex items-center justify-center p-4 text-center rounded-none relative">
+                    <span className="text-white text-lg font-black tracking-widest uppercase">
+                      {getPostTagPlaceholder(post)}
+                    </span>
+                    {hasVideo && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-10 h-10 bg-button-hover text-text flex items-center justify-center shadow-md">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
+                  <span className="text-red-700 font-bold">
+                    {post.source_type}
                   </span>
+                  <span>{formatRelativeDateTime(post.external_created_at)}</span>
                 </div>
-              )}
 
-              <div className="flex items-center justify-between mb-2 text-[10px] font-semibold text-text/50 uppercase tracking-wider">
-                <span className="text-red-700 font-bold">
-                  {post.source_type}
-                </span>
-                <span>{formatRelativeDateTime(post.external_created_at)}</span>
-              </div>
-
-              <p className="text-[10px] md:text-sm text-text leading-snug line-clamp-4 break-words">
-                {renderMessageWithLinks(post.message)}
-              </p>
-            </article>
-          ))}
+                <p className="text-[10px] md:text-sm text-text leading-snug line-clamp-4 break-words">
+                  {renderMessageWithLinks(post.message)}
+                </p>
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -297,6 +404,8 @@ export default function FeedGrid({
       {selectedPost && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-2xl max-h-[90vh] bg-white shadow-xl overflow-hidden flex flex-col rounded-none">
+            
+            {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-text/30">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-text/50">
                 {formatRelativeDateTime(selectedPost.external_created_at, true)}
@@ -309,8 +418,38 @@ export default function FeedGrid({
               </button>
             </div>
 
+            {/* Modal Content */}
             <div className="p-6 overflow-y-auto space-y-4">
-              {selectedPost.image ? (
+              {getPostVideoUrl(selectedPost) ? (
+                <div className="w-full bg-black aspect-video rounded-none overflow-hidden relative group">
+                  <video
+                    ref={videoRef}
+                    src={getPostVideoUrl(selectedPost) || undefined}
+                    controls
+                    playsInline
+                    className="w-full h-full object-contain"
+                  >
+                    Your browser does not support playing HTML video.
+                  </video>
+
+                  {/* Manual Unmute Control */}
+                  {isMuted ? (
+                    <button
+                      onClick={toggleMute}
+                      className="absolute top-3 right-3 bg-button-hover text-text px-3 py-1.5 text-[10px] font-heading font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors z-10 rounded-none cursor-pointer shadow-md"
+                    >
+                      <VolumeX className="w-3.5 h-3.5" /> Tap To Unmute
+                    </button>
+                  ) : (
+                    <button
+                      onClick={toggleMute}
+                      className="absolute top-3 right-3 bg-black/60 hover:bg-black text-white px-2.5 py-1 text-[10px] font-heading uppercase tracking-wider flex items-center gap-1 transition-colors z-10 rounded-none cursor-pointer opacity-0 group-hover:opacity-100"
+                    >
+                      <Volume2 className="w-3.5 h-3.5" /> Mute
+                    </button>
+                  )}
+                </div>
+              ) : selectedPost.image ? (
                 <img
                   src={selectedPost.image}
                   alt="Post media"
@@ -323,11 +462,13 @@ export default function FeedGrid({
                   </span>
                 </div>
               )}
+
               <div className="text-text/80 text-sm sm:text-base leading-relaxed whitespace-pre-line font-sans">
                 {renderMessageWithLinks(selectedPost.message)}
               </div>
             </div>
 
+            {/* Modal Footer */}
             <div className="p-4 border-t border-text/30 bg-text/10 flex items-center justify-between">
               <a
                 href={selectedPost.full_url}
@@ -344,6 +485,7 @@ export default function FeedGrid({
                 Close
               </button>
             </div>
+
           </div>
         </div>
       )}
